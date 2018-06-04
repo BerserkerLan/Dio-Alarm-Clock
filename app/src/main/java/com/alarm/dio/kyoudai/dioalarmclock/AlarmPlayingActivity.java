@@ -48,6 +48,7 @@ public class AlarmPlayingActivity extends AppCompatActivity {
             public void onAdClosed() {
                 startActivity(new Intent(getApplicationContext(),MainActivity.class));
             }
+
         });
 
         advert.loadAd(new AdRequest.Builder().build());
