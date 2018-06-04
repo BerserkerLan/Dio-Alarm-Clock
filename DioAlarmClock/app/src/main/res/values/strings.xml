@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">Dio Alarm Clock</string>
-    <string name="title_activity_add_alarm">AddAlarmActivity</string>
-    <string name="alarm_delete_snack">Deleted Alarm</string>
-</resources>
