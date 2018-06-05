@@ -37,7 +37,7 @@ public class AlarmPlayingActivity extends AppCompatActivity {
         alarmTimeView = findViewById(R.id.playingTime);
         showing = false;
         stopAlarmButton = findViewById(R.id.stopAlarmButton);
-        MobileAds.initialize(this, "ca-app-pub-5483591282248570~7107432706");
+        MobileAds.initialize(getApplicationContext(), "ca-app-pub-5483591282248570~7107432706");
         advert = new InterstitialAd(this);
         advert.setAdUnitId("ca-app-pub-5483591282248570/7033789821");
 
