@@ -7,7 +7,13 @@ This is an Alarm clock Android application, based on the popular anime character
 
 The application contains voice clips spoken by Dio.
 
-# Downloading the application
+<div style = "display:flex;">
+<img alt="MainActivity" src="/APPIMAGES/mainScreen.png" width="33%">
+<img alt="AddAlarmActivity" src="/APPIMAGES/textMessageActivity.png" width="33%">
+<img alt="AddAlarmActivity - Clock" src="/APPIMAGES/setting.png" width="33%">
+</div>
+
+### Downloading the application
 
 This application is available for download on the [Google Play Store](https://play.google.com/store/apps/details?id=com.alarm.dio.kyoudai.dioalarmclock). 
 
