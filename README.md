@@ -1,7 +1,6 @@
 # Dio Alarm Clock; Alarm clock application for Android
 
-EVER WANTED TO WAKE UP TO THE VOICE OF YOUR ONE AND ONLY WAIFU, DIO? LOOK NO FURTHER! 
-<br></br>
+Ever wanted to wake up to the voice of YOUR ONE AND ONLY WAIFU, DIO? LOOK NO FURTHER!
 
 ### About Dio Alarm Clock
 This is an Alarm clock Android application, based on the popular anime character 'Dio Brando', from the anime 'Jojo's Bizarre Adventure'.
