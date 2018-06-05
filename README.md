@@ -8,9 +8,9 @@ This is an Alarm clock Android application, based on the popular anime character
 The application contains voice clips spoken by Dio.
 
 <div style = "display:flex;">
-<img alt="MainActivity" src="/APPIMAGES/mainScreen.png" width="33%">
-<img alt="AddAlarmActivity" src="/APPIMAGES/textMessageActivity.png" width="33%">
-<img alt="AddAlarmActivity - Clock" src="/APPIMAGES/setting.png" width="33%">
+<img  src="Screenshots/main_activity.jpg" width="33%">
+<img src="Screenshots/add_alarm_activity.jpg" width="33%">
+<img  src="Screenshots/add_alarm_activity_clock.jpg" width="33%">
 </div>
 
 ### Downloading the application
