@@ -104,13 +104,6 @@ public class AlarmPlayingActivity extends AppCompatActivity {
                 break;
         }
 
-        if (soundPlayer != null) {
-            soundPlayer.start();
-            soundPlayer.setLooping(true);
-        }
-
-
-
         stopAlarmButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -121,6 +114,14 @@ public class AlarmPlayingActivity extends AppCompatActivity {
                 }
             }
         });
+
+        if (soundPlayer != null) {
+            soundPlayer.start();
+            soundPlayer.setLooping(true);
+        }
+
+
+
     }
 
 
