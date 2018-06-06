@@ -40,12 +40,10 @@ public class AlarmPlayingActivity extends AppCompatActivity {
         MobileAds.initialize(getApplicationContext(), "ca-app-pub-5483591282248570~7107432706");
         advert = new InterstitialAd(this);
         advert.setAdUnitId("ca-app-pub-5483591282248570/7033789821");
-
-
-
         advert.setAdListener(new AdListener() {
             @Override
             public void onAdClosed() {
+                finish();
                 startActivity(new Intent(getApplicationContext(),MainActivity.class));
             }
 
@@ -118,12 +116,8 @@ public class AlarmPlayingActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (advert.isLoaded() && !showing) {
                     soundPlayer.stop();
-                    Log.d("Loaded", "It loaded");
                     showing = true;
                     advert.show();
-                }
-                else {
-                    Log.d("Ad", "Its not loading");
                 }
             }
         });

@@ -475,18 +475,19 @@ public class MainActivity extends AppCompatActivity {
         protected Alarm doInBackground(Alarm... alarms) {
             itsTime = false;
             if (CLOSEST_ALARM_HOPEFULLY != null && !activatedList.isEmpty()) {
-
-
                 int index = alarmsArrayList.indexOf(CLOSEST_ALARM_HOPEFULLY);
-
-
-                //Log.d("In THREAD", "ENTERED THE THREAD");
-
-
                 boolean dayIsToday = false;
 
                 while (!itsTime) {
-                    if (!activatedList.isEmpty()) {
+                    boolean sameSize = activatedList.size() == alarmsArrayList.size();
+                    if (sameSize) {
+                        Log.d("Size", "Same Size");
+                    }
+                    else {
+                        Log.d("Size", "Not the same, Alarms: " + alarmsArrayList.size() + " , Activated: " + activatedList.size());
+                    }
+                    Log.d("Size", "Its the same");
+                    if (!activatedList.isEmpty() && (activatedList.size() == alarmsArrayList.size())) {
                         if (!activatedList.get(index)) {
                             break;
                         }
@@ -497,9 +498,6 @@ public class MainActivity extends AppCompatActivity {
                     String currentDate = Calendar.getInstance().getTime().toString();
 
                     String currentDay = currentDate.substring(0, 3).toLowerCase();
-
-                    //Log.d("Tag","Looping......");
-
                     if (CLOSEST_ALARM_HOPEFULLY != null) {
                         String[] days = getDaysInArray(CLOSEST_ALARM_HOPEFULLY.getDays());
 
