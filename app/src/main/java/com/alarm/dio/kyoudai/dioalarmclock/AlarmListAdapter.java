@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.provider.ContactsContract;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -72,6 +73,7 @@ public class AlarmListAdapter extends BaseAdapter implements ListAdapter {
 
         daysText.setText(days.get(position));
 
+        //If alarm is active, set the switch to active, otherwise not
         if (activatedList.get(position)) {
             alarmActive.setChecked(true);
         }
@@ -82,20 +84,20 @@ public class AlarmListAdapter extends BaseAdapter implements ListAdapter {
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d("clicked", "It was clicked");
+                //Event for deleting an alarm
+                //Open both Databases to check which one had this alarm
                 final SQLiteDatabase alarmDB = tempView.getContext().openOrCreateDatabase("Active Alarms",SQLiteDatabase.OPEN_READWRITE,null);
                 alarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
-
-
                 final SQLiteDatabase unActiveAlarmDB = tempView.getContext().openOrCreateDatabase("Unactive Alarms",SQLiteDatabase.OPEN_READWRITE,null);
                 unActiveAlarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
 
+                //Delete from both as a precaution wherever the alarm is
                 alarmDB.delete("Alarm","name=?",new String[]{alarms.get(position).getName()});
                 unActiveAlarmDB.delete("Alarm","name=?",new String[]{alarms.get(position).getName()});
 
-                Log.d("Deleted", "got to this");
-                if (!alarms.isEmpty()) {
-                    MainActivity.alarmsArrayList.remove(alarms.get(position));
+
+                if (!alarms.isEmpty()) { //Safety check
+                    MainActivity.alarmsArrayList.remove(alarms.get(position)); //Remove alarm from MainActivity alarmlist too for that session
                     if (!MainActivity.unActiveAlarms.isEmpty() && !alarms.isEmpty()) {
                         try {
                             MainActivity.unActiveAlarms.remove(alarms.get(position));
@@ -108,10 +110,11 @@ public class AlarmListAdapter extends BaseAdapter implements ListAdapter {
                 if (!MainActivity.activatedList.isEmpty()) {
                     MainActivity.activatedList.remove(position);
                 }
+                //Cancel all notifications
                 if (MainActivity.notificationManager != null) {
                     MainActivity.notificationManager.cancelAll();
                 }
-                Log.d("Delted", "Deleted Alarm");
+                //Update Listview of deletion
                 MainActivity.alarmListAdapter.notifyDataSetChanged();
                 Snackbar snackbar = Snackbar.make(tempView, R.string.alarm_delete_snack,Snackbar.LENGTH_SHORT);
                 snackbar.show();
@@ -123,37 +126,44 @@ public class AlarmListAdapter extends BaseAdapter implements ListAdapter {
             @Override
             public void onClick(View v) {
                 if (tempView != null) {
+                    //Open both databases
                     final SQLiteDatabase alarmDB = tempView.getContext().openOrCreateDatabase("Active Alarms", SQLiteDatabase.OPEN_READWRITE, null);
                     alarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
-
-
                     final SQLiteDatabase unActiveAlarmDB = tempView.getContext().openOrCreateDatabase("Unactive Alarms", SQLiteDatabase.OPEN_READWRITE, null);
                     unActiveAlarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
+
+                    //If the switch is not checked
                     if (!alarmActive.isChecked()) {
                         Cursor activeCursor = alarmDB.rawQuery("SELECT * FROM Alarm WHERE name=?", new String[]{alarms.get(position).getName()});
                         activeCursor.moveToFirst();
-                        String tempName = activeCursor.getString(activeCursor.getColumnIndex("name"));
-                        String tempDays = activeCursor.getString(activeCursor.getColumnIndex("days"));
-                        String tempSound = activeCursor.getString(activeCursor.getColumnIndex("sound"));
-                        String tempTime = activeCursor.getString(activeCursor.getColumnIndex("time"));
-                        unActiveAlarmDB.execSQL("INSERT INTO Alarm (name, days, sound, time) VALUES('" + tempName + "', '" + tempDays + "', '" + tempSound + "', '" + tempTime + "');");
-                        alarmDB.delete("Alarm", "name=?", new String[]{tempName});
-                        MainActivity.unActiveAlarms.add(alarms.get(position));
-                        MainActivity.activatedList.set(position, true);
-                        if (MainActivity.notificationManager != null) {
-                            MainActivity.notificationManager.cancelAll();
-                            ((MainActivity) tempView.getContext()).setUpNotifications();
+                        //Alarm would be in Active alarms, and thus, delete it from there, and put it in the other database
+                        long count = DatabaseUtils.longForQuery(alarmDB,"SELECT COUNT(*) FROM Alarm",null);
+                        if (count > 0) {
+                            String tempName = activeCursor.getString(activeCursor.getColumnIndex("name"));
+                            String tempDays = activeCursor.getString(activeCursor.getColumnIndex("days"));
+                            String tempSound = activeCursor.getString(activeCursor.getColumnIndex("sound"));
+                            String tempTime = activeCursor.getString(activeCursor.getColumnIndex("time"));
+                            unActiveAlarmDB.execSQL("INSERT INTO Alarm (name, days, sound, time) VALUES('" + tempName + "', '" + tempDays + "', '" + tempSound + "', '" + tempTime + "');");
+                            alarmDB.delete("Alarm", "name=?", new String[]{tempName});
+                            //Alarm is now unactive
+                            MainActivity.unActiveAlarms.add(alarms.get(position));
+                            MainActivity.activatedList.set(position, true);
+                            if (MainActivity.notificationManager != null) {
+                                MainActivity.notificationManager.cancelAll();
+                                //Setup notifications again as this alarm may have been the closest alarm
+                                ((MainActivity) tempView.getContext()).setUpNotifications();
+                            }
+                            activeCursor.close();
+                            Toast.makeText(tempView.getContext(), "Made alarm inactive", Toast.LENGTH_SHORT).show();
                         }
-
-                        activeCursor.close();
-
-                        //MainActivity.alarmListAdapter.notifyDataSetChanged();
-                        Toast.makeText(tempView.getContext(), "Made alarm inactive", Toast.LENGTH_SHORT).show();
-
-                    } else {
+                    }
+                    //If switch is checked
+                    else {
                         Cursor activeCursor = unActiveAlarmDB.rawQuery("SELECT * FROM Alarm WHERE name=?", new String[]{alarms.get(position).getName()});
+                        activeCursor.moveToFirst();
+                        //Alarms in Unactive alarms, thus, move them into active alarms db and delete from unactive one
                         long count = DatabaseUtils.longForQuery(unActiveAlarmDB, "SELECT COUNT(*) FROM Alarm", null);
-                        if (count > 0 && activeCursor != null && activeCursor.moveToFirst()) {
+                        if (count > 0) {
                             String tempName = activeCursor.getString(activeCursor.getColumnIndex("name"));
                             String tempDays = activeCursor.getString(activeCursor.getColumnIndex("days"));
                             String tempSound = activeCursor.getString(activeCursor.getColumnIndex("sound"));
@@ -166,10 +176,7 @@ public class AlarmListAdapter extends BaseAdapter implements ListAdapter {
                                 MainActivity.notificationManager.cancelAll();
                                 ((MainActivity) tempView.getContext()).setUpNotifications();
                             }
-
                             activeCursor.close();
-
-                            //MainActivity.alarmListAdapter.notifyDataSetChanged();
                             Toast.makeText(tempView.getContext(), "Made alarm Active", Toast.LENGTH_SHORT).show();
 
                         }

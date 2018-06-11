@@ -28,6 +28,7 @@ public class TimeClockFragment extends DialogFragment implements TimePickerDialo
     @Override
     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
 
+        //Set Text when time is selected
         AddAlarmActivity.timeSetText.setText(addZeroToTime(hourOfDay) + ":" + addZeroToTime(minute));
 
     }

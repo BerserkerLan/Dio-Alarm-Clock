@@ -62,23 +62,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(null);
         setContentView(R.layout.activity_main);
-        backPress = 0;
+        //Initialize and load advertisements
         MobileAds.initialize(this, "ca-app-pub-5483591282248570~7107432706");
         AdView adView = findViewById(R.id.adView);
         adView.loadAd(new AdRequest.Builder().build());
 
-        signalNewNotification = false;
+
+        //Initialize UI elements
         addNewAlarm = findViewById(R.id.addAlarmButton);
         alarmList = findViewById(R.id.alarmsList);
         alarmsArrayList = new ArrayList<>();
         unActiveAlarms = new ArrayList<>();
         activateSwitch = findViewById(R.id.alarmSwitch);
+
+        //Initialize variables for use in methods later
+        signalNewNotification = false;
+        backPress = 0;
+
+        //Loads the alarm list from the SQLite DB into the alarmsArrayList
         loadAlarmList();
 
 
-        //TODO: Make Notifications show good icon
-
-
+        //Convert the days format from "|Mon|...|" to "Mon, ..."
         if (!alarmsArrayList.isEmpty()) {
             alarmsDaysList = new ArrayList<>();
 
@@ -103,9 +108,7 @@ public class MainActivity extends AppCompatActivity {
 
             alarmList.setAdapter(alarmListAdapter);
 
-            //NOTE: str1.compareTo(str2) returns 1 when str1 is bigger, else -1
-            //Date currentTime = Calendar.getInstance().getTime();
-
+            //Set up a notification for the closest alarm, if it exists
             setUpNotifications();
 
         }
@@ -115,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
         addNewAlarm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Start AddAlarmActivity, and pass the alarmArrayList to be used by that activity
                 Intent intent = new Intent(getApplicationContext(),AddAlarmActivity.class);
                 intent.putExtra("alarmsList",alarmsArrayList);
                 finish();
@@ -126,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadAlarmList() {
         activatedList = new ArrayList<>();
+        //Loads from the database of active alarms
         alarmDB = openOrCreateDatabase("Active Alarms", SQLiteDatabase.OPEN_READWRITE, null);
         alarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
 
@@ -153,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+        //Load from the database of inactive alarms
         inactiveAlarmDB = openOrCreateDatabase("Unactive Alarms",SQLiteDatabase.OPEN_READWRITE,null);
         inactiveAlarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
 
@@ -193,38 +199,50 @@ public class MainActivity extends AppCompatActivity {
 
 
     public  void setUpNotifications() {
-        //BEGINNING OF SMALLEST ALARM CALCULATION
 
+        //First, calculate the Closest alarm, if any
         String currentDate = Calendar.getInstance().getTime().toString();
         String currentTime = transformTime(currentDate.substring(TIME_START_INDEX,TIME_END_INDEX));
         closestAlarm = new Alarm();
 
-        //Toast.makeText(this, "Setting up notification..........", Toast.LENGTH_SHORT).show();
 
             int closestDayDistance = 9;
             closestDayIndex = -1;
 
+            //If its empty, no need to do it, as no alarms
             if (!alarmsArrayList.isEmpty()) {
-                if (!(alarmsArrayList.get(0).getName() == null)) {
+                if (!(alarmsArrayList.get(0).getName() == null)) { //Safety Check
+                    //Get time difference for first element as an initializer
                     String initialTimeDifference = getTimeDifference(transformTime(currentTime), transformTime(alarmsArrayList.get(0).getTime()));
                     Log.d("Day", alarmsArrayList.get(0).getDays().toLowerCase());
+                    //Returns the days in array format
                     String[] splitter = alarmsArrayList.get(0).getDays().split("\\|");
                     StringBuilder temp = new StringBuilder();
+
                     for (String aSplitter : splitter) {
                         temp.append(aSplitter).append(" , ");
                     }
                     Log.d("temp", temp.toString());
+                    //Loop all the alarms
                     for (int i = 0; i < alarmsArrayList.size(); i++) {
+                        //If alarm isn't active, no need to include in closest alarm calculation
                         if (!unActiveAlarms.contains(alarmsArrayList.get(i))) {
                             int tempClosestDayIndex = getClosestDayIndex(getDaysInArray(alarmsArrayList.get(i).getDays().toLowerCase()));
                             int tempClosestDayDistance = getClosestDayDifference(getDaysInArray(alarmsArrayList.get(i).getDays().toLowerCase()));
                             String tempTime = transformTime(alarmsArrayList.get(i).getTime());
+                            //If day is today, the time is after the current time, and the time difference is smaller than the previously initialized timeDifference
                             if ((tempClosestDayDistance == 0) && (transformTime(tempTime).compareTo(transformTime(currentTime)) > 0) && (transformTime(getTimeDifference(transformTime(tempTime), currentTime)).compareTo(initialTimeDifference) <= 0)) {
+                                //Make this the smallest time difference then
                                 initialTimeDifference = transformTime(getTimeDifference(tempTime, currentTime));
+                                //This is the closest day
                                 closestDayDistance = tempClosestDayDistance;
                                 closestAlarm = alarmsArrayList.get(i);
+                                //Store index of the closest day from the days array of the alarm
                                 closestDayIndex = getClosestDayIndex(getDaysInArray(alarmsArrayList.get(i).getDays().toLowerCase()));
-                            } else if (tempClosestDayDistance < closestDayDistance && tempClosestDayDistance != 0) {
+                            }
+                            //If the day is strictly closer than the previous day, and there isn't an alarm that runs today
+                            else if (tempClosestDayDistance < closestDayDistance && tempClosestDayDistance != 0)
+                            {
                                 closestDayDistance = tempClosestDayDistance;
                                 closestDayIndex = tempClosestDayIndex;
                                 closestAlarm = alarmsArrayList.get(i);
@@ -235,13 +253,15 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
-                if (closestAlarm.getDays() != null && closestDayIndex >= 0) {
+                if (closestAlarm.getDays() != null && closestDayIndex >= 0) { //Safety check
 
                     String nextDay = getDaysInArray(closestAlarm.getDays())[closestDayIndex];
 
+                    //if the alarm is still active
                     if (!unActiveAlarms.contains(closestAlarm)) {
 
 
+                        //The actual application icon as the notification icone
                         Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 
                         CLOSEST_ALARM_HOPEFULLY = closestAlarm;
@@ -259,6 +279,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                         Notification notification = builder.build();
+                        //Flag makes sure the notification stays there, and isn't dismissable
                         notification.flags |= Notification.FLAG_ONGOING_EVENT;
                         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                         if (notificationManager != null) {
@@ -268,19 +289,22 @@ public class MainActivity extends AppCompatActivity {
                             notificationManager.notify(0, notification);
                         }
 
+                        //Create channel for higher android devices
                         createNotificationChannel(alarmName, alarmTime);
 
                     }
 
+                    //Weak Reference for static asynctask
                     WeakReference<Activity> activity = new WeakReference<Activity>(this);
 
+                    //Begin the alarmthread as there is a close alarm
                     alarmThread = new ActivateAlarmThread(activity);
                     alarmThread.execute();
                 }
             }
-        //END OF SMALLEST ALARM CALCULATION
     }
 
+    //Method taken from online, channel needs registration on higher API's
     private void createNotificationChannel(String alarmName, String alarmTime) {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
@@ -297,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    //Prompts the user to only exit after pressing the back button twice, to ensure no mistakes in pressing the back button
     @Override
     public void onBackPressed() {
         backPress++;
@@ -305,12 +329,14 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
         }
         else {
+            //Keeps task running in Background
             this.moveTaskToBack(true);
         }
 
     }
 
 
+    //Method to return the difference in hour in minutes in format HH:MM
     public String getTimeDifference(String time1, String time2) {
         int time1Hour = Integer.parseInt(time1.substring(0,2));
         int time1Minutes = Integer.parseInt(time1.substring(3,time1.length()));
@@ -336,6 +362,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //Parses the dates in format "|Mon|Tue|..." into an array
     public static String[] getDaysInArray(String d) {
         String[] days = d.split("\\|");
         String[] daysMinusOne = new String[days.length - 1];
@@ -343,6 +370,7 @@ public class MainActivity extends AppCompatActivity {
         return daysMinusOne;
     }
 
+    //Returns the index of the days array with the closest day
     public int getClosestDayIndex(String[] days) {
         String currentDate = Calendar.getInstance().getTime().toString();
         String currentDay = currentDate.substring(0,3).toLowerCase();
@@ -362,6 +390,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+    //Returns the actual closest day
     public int getClosestDayDifference(String[] days) {
         String currentDate = Calendar.getInstance().getTime().toString();
         String currentDay = currentDate.substring(0,3).toLowerCase();
@@ -382,6 +411,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    //Method to calculate the next day in the week
     public String getNextDay(String day) {
         String[] days = {"mon","tue","wed","thu","fri","sat","sun"};
 
@@ -396,6 +426,7 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
+    //Method to ensure "0" is added onto numbers less than or equal to 9 to ensure HH:MM format
     public static String transformTime(String time) {
         String[] timeArray = time.split("\\:");
 
@@ -416,6 +447,7 @@ public class MainActivity extends AppCompatActivity {
         return hourString + ":" +  minuteString;
     }
 
+    //Returns the difference in two days
     public int getDayDifference(String day1, String day2) {
         if (day1.equals(day2)) {
             return 0;
@@ -470,10 +502,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    //Alarm Thread to manage the playing of an Alarm when it is time
     static class ActivateAlarmThread extends AsyncTask<Alarm,Alarm,Alarm> {
 
+        //Variable to keep track of when it is time to start playing the alarm
         boolean itsTime;
-         WeakReference<Activity> activity;
+
+        WeakReference<Activity> activity;
 
         ActivateAlarmThread(WeakReference<Activity> activity) {
             this.activity =  activity;
@@ -482,50 +517,41 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Alarm doInBackground(Alarm... alarms) {
             itsTime = false;
+            //If there exists an Alarm that is close, and that alarm isn't unactive
             if (CLOSEST_ALARM_HOPEFULLY != null && !activatedList.isEmpty()) {
 
+                //Loop till when it is time to play the alarm
                 while (!itsTime) {
                     int index = alarmsArrayList.indexOf(CLOSEST_ALARM_HOPEFULLY);
                     boolean sameSize = activatedList.size() == alarmsArrayList.size();
-                    if (sameSize) {
-                        Log.d("Size", "Same Size");
-                    }
-                    else {
-                        Log.d("Size", "Not the same, Alarms: " + alarmsArrayList.size() + " , Activated: " + activatedList.size());
-                    }
-                    Log.d("Size", "Its the same");
+                    //Another check to ensure while this thread is running, changes are updated
                     if (!activatedList.isEmpty() && (activatedList.size() == alarmsArrayList.size())) {
                         if (!activatedList.get(index)) {
+                            //If now the CLOSEST_ALARM isn't active, exit this thread
                             break;
                         }
                     }
                     else {
+                        //If there is no active alarm, break anyways
                          break;
                     }
+
                     String currentDate = Calendar.getInstance().getTime().toString();
 
-                    String currentDay = currentDate.substring(0, 3).toLowerCase();
-                    if (CLOSEST_ALARM_HOPEFULLY != null) {
-                        String[] days = getDaysInArray(CLOSEST_ALARM_HOPEFULLY.getDays());
-                            for (String day : days) {
-                                if (day.toLowerCase().equals(currentDay)) {
-                                    Log.d("day", "Day is today!");
-                                    break;
-                                }
-                            }
-                        }
 
 
-                        String currentTime = currentDate.substring(TIME_START_INDEX, TIME_END_INDEX);
-                        //Log.d("time", currentTime);
+                    String currentTime = currentDate.substring(TIME_START_INDEX, TIME_END_INDEX);
 
 
-                        if (transformTime(CLOSEST_ALARM_HOPEFULLY.getTime()).equals(transformTime(currentTime))  && activatedList.get(index)) {
+                    //If the time of the alarm and current time is equal, aswell as if it is still active
+                    if (transformTime(CLOSEST_ALARM_HOPEFULLY.getTime()).equals(transformTime(currentTime))  && activatedList.get(index)) {
+                            //breaks the while loop
                             itsTime = true;
                             break;
                         }
                     }
                     try {
+                        //Sleep on each while loop iteration to ensure better battery and memory usage
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -538,18 +564,22 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Alarm alarm) {
+            //If it is time, and it did not break due to any other reasons
             if (CLOSEST_ALARM_HOPEFULLY != null && itsTime) {
-                Log.d("tried", "Tried to run alarm");
+                //Start the AlarmPlayingActivity
                 Intent playAlarmIntent = new Intent(activity.get().getApplicationContext(), AlarmPlayingActivity.class);
                 playAlarmIntent.putExtra("alarmName", CLOSEST_ALARM_HOPEFULLY.getName());
                 playAlarmIntent.putExtra("alarmTime", CLOSEST_ALARM_HOPEFULLY.getTime());
                 playAlarmIntent.putExtra("alarmSound", CLOSEST_ALARM_HOPEFULLY.getSound());
 
+                //If there is a notification, cancel it
                 if (notificationManager != null) {
                     notificationManager.cancelAll();
                 }
+                //finish current activity
                 activity.get().finish();
 
+                //start new activity
                activity.get().startActivity(playAlarmIntent);
             }
         }

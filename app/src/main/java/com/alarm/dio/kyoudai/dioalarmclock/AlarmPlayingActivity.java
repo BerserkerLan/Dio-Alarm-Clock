@@ -34,8 +34,17 @@ public class AlarmPlayingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_alarm_playing);
         alarmNameView = findViewById(R.id.playingTitle);
         alarmTimeView = findViewById(R.id.playingTime);
-        showing = false;
         stopAlarmButton = findViewById(R.id.stopAlarmButton);
+
+        //Variable used for if advertistment is showing
+        showing = false;
+
+        //Set UI elements corresponding texts
+        alarmNameView.setText(getIntent().getStringExtra("alarmName"));
+        alarmTimeView.setText(getIntent().getStringExtra("alarmTime"));
+        sound = getIntent().getStringExtra("alarmSound");
+
+        //Adverts temporarily not showing as account disabled
         MobileAds.initialize(getApplicationContext(), "ca-app-pub-5483591282248570~7107432706");
 //        advert = new InterstitialAd(this);
 //        advert.setAdUnitId("ca-app-pub-5483591282248570/7033789821");
@@ -51,6 +60,7 @@ public class AlarmPlayingActivity extends AppCompatActivity {
 //        advert.loadAd(new AdRequest.Builder().build());
 
 
+        //Wake up the screen if it is locked
         PowerManager pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wakeLock = null;
         if (pm != null) {
@@ -60,6 +70,7 @@ public class AlarmPlayingActivity extends AppCompatActivity {
             wakeLock.acquire(10*60*1000L /*10 minutes*/);
         }
 
+        //Lock the keyboard
         KeyguardManager keyguardManager = (KeyguardManager) getApplicationContext().getSystemService(Context.KEYGUARD_SERVICE);
         KeyguardManager.KeyguardLock keyguardLock = null;
         if (keyguardManager != null) {
@@ -70,10 +81,8 @@ public class AlarmPlayingActivity extends AppCompatActivity {
         }
 
 
-        alarmNameView.setText(getIntent().getStringExtra("alarmName"));
-        alarmTimeView.setText(getIntent().getStringExtra("alarmTime"));
-        sound = getIntent().getStringExtra("alarmSound");
 
+        //Ensures device is now at full volume
         AudioManager am =
                 (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
@@ -85,6 +94,7 @@ public class AlarmPlayingActivity extends AppCompatActivity {
         }
 
 
+        //Switch for setting soundPlayer based on the sound selected
         switch (sound) {
             case "ZA WARUDO":
                 soundPlayer = MediaPlayer.create(getApplicationContext(), R.raw.zawarudo);
@@ -103,23 +113,28 @@ public class AlarmPlayingActivity extends AppCompatActivity {
                 break;
         }
 
+        //Start playing the sound repetitively
+        if (soundPlayer != null) {
+            soundPlayer.start();
+            soundPlayer.setLooping(true);
+        }
+
+
         stopAlarmButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 //                if (advert.isLoaded() && !showing) {
 
+                //Stop sound playing
                     soundPlayer.stop();
                     showing = true;
                     //advert.show();
+                //End Activity
                 finish();
                 //}
             }
         });
 
-        if (soundPlayer != null) {
-            soundPlayer.start();
-            soundPlayer.setLooping(true);
-        }
 
 
 

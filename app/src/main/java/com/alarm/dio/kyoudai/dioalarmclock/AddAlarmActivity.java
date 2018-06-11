@@ -39,7 +39,7 @@ import java.util.HashMap;
 
 public class AddAlarmActivity extends AppCompatActivity {
 
-    public static TextView timeSetText;
+    static TextView timeSetText;
     LinearLayoutCompat daysLayout;
     EditText alarmName;
     TextView monday;
@@ -65,25 +65,31 @@ public class AddAlarmActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_alarm);
+        //Setup UI elements
         daysLayout = findViewById(R.id.linearLayoutCompat);
-
         songSpinner = findViewById(R.id.soundSpinner);
         addAlarmButton = findViewById(R.id.addAlarm);
-
         alarmName = findViewById(R.id.AlarmTitle);
         timeSetText = findViewById(R.id.setTime);
+        monday = daysLayout.findViewById(R.id.monday);
+        tuesday = daysLayout.findViewById(R.id.tuesday);
+        wednesday = daysLayout.findViewById(R.id.wednesday);
+        thursday = daysLayout.findViewById(R.id.thursday);
+        friday = daysLayout.findViewById(R.id.friday);
+        saturday = daysLayout.findViewById(R.id.saturday);
+        sunday = daysLayout.findViewById(R.id.sunday);
 
         alarmsTitlesArrayList = new ArrayList<>();
         alarmsInActive = new ArrayList<>();
         alarmsNotActive = new ArrayList<>();
         MobileAds.initialize(this, "ca-app-pub-5483591282248570~7107432706");
-        adView = findViewById(R.id.adView2);
-        adView.loadAd(new AdRequest.Builder().build());
+//        adView = findViewById(R.id.adView2);
+//        adView.loadAd(new AdRequest.Builder().build());
 
 
+        //Load Both Databases, and store the titles so that user cannot create an alarm if title already exists
         alarmDB = openOrCreateDatabase("Active Alarms", SQLiteDatabase.OPEN_READWRITE, null);
         alarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
-
         Cursor resultAlarm = alarmDB.rawQuery("SELECT * FROM Alarm", null);
         resultAlarm.moveToFirst();
         long count = DatabaseUtils.longForQuery(alarmDB, "SELECT COUNT(*) FROM Alarm", null);
@@ -91,28 +97,24 @@ public class AddAlarmActivity extends AppCompatActivity {
             alarmsTitlesArrayList.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
             alarmsInActive.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
         }
-
         while(resultAlarm.moveToNext()) {
             alarmsTitlesArrayList.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
             alarmsInActive.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
         }
-
         inactiveAlarmDB = openOrCreateDatabase("Unactive Alarms",SQLiteDatabase.OPEN_READWRITE,null);
         inactiveAlarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
-
-         resultAlarm = inactiveAlarmDB.rawQuery("SELECT * FROM Alarm", null);
+        resultAlarm = inactiveAlarmDB.rawQuery("SELECT * FROM Alarm", null);
         resultAlarm.moveToFirst();
         long count2 = DatabaseUtils.longForQuery(inactiveAlarmDB, "SELECT COUNT(*) FROM Alarm", null);
         if (count2 > 0) {
             alarmsTitlesArrayList.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
             alarmsNotActive.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
         }
-
         while(resultAlarm.moveToNext()) {
             alarmsTitlesArrayList.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
             alarmsNotActive.add(resultAlarm.getString(resultAlarm.getColumnIndex("name")));
         }
-
+        resultAlarm.close();
 
 
         final ArrayList<String> soundList = new ArrayList<>();
@@ -121,6 +123,8 @@ public class AddAlarmActivity extends AppCompatActivity {
         soundList.add("MUDA MUDA");
         soundList.add("ROAD ROLLER");
         soundList.add("WRRRYYY");
+
+        //Setup Spinner
 
         final ArrayAdapter<String> soundAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.spinner_list, soundList);
 
@@ -138,15 +142,10 @@ public class AddAlarmActivity extends AppCompatActivity {
             }
         });
 
-        monday = daysLayout.findViewById(R.id.monday);
-        tuesday = daysLayout.findViewById(R.id.tuesday);
-        wednesday = daysLayout.findViewById(R.id.wednesday);
-        thursday = daysLayout.findViewById(R.id.thursday);
-        friday = daysLayout.findViewById(R.id.friday);
-        saturday = daysLayout.findViewById(R.id.saturday);
-        sunday = daysLayout.findViewById(R.id.sunday);
 
 
+
+        //Loads days Listview for selection
         daysSelected = new HashMap<>();
 
         daysSelected.put(monday, false);
@@ -158,6 +157,7 @@ public class AddAlarmActivity extends AppCompatActivity {
         daysSelected.put(sunday, false);
 
 
+        //Change days color when clicked, and update value of selection based on if its selected
         monday.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -252,9 +252,12 @@ public class AddAlarmActivity extends AppCompatActivity {
 
 
 
+
         addAlarmButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                //Store Days as "|Mon|..."
                 String days = "|";
                 if (daysSelected.get(monday)) {
                     days += "Mon|";
@@ -278,26 +281,31 @@ public class AddAlarmActivity extends AppCompatActivity {
                     days += "Sun|";
                 }
                 if (days.equals("|")) {
+                    //If no day selected, prompt user to select one
                     Toast.makeText(getApplicationContext(),"Please select a day",Toast.LENGTH_LONG).show();
                 }
                 else {
+                    //Change all titles to lowercase for easier comparison
                     changeArrayListToLowerCase(alarmsTitlesArrayList);
-                    if (alarmName.getText().toString().equals(" ") || alarmName.getText().toString().equals("")) {
+                    if (allWhitespaces(alarmName.getText().toString()) || alarmName.getText().toString().equals("")) {
+                        //If name isn't there, or is invalid
                         Toast.makeText(getApplicationContext(),"Please set a valid name", Toast.LENGTH_LONG).show();
                     }
                     else if (alarmsTitlesArrayList.contains(alarmName.getText().toString())) {
+                        //Prompt user that alarm is taken
                         if (alarmsInActive.contains(alarmName.getText().toString()) && alarmsNotActive.contains(alarmName.getText().toString())) {
-                            Toast.makeText(getApplicationContext(), "Alarm name is in both", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(), "Alarm name is already taken", Toast.LENGTH_LONG).show();
                         }
                         else if (alarmsInActive.contains(alarmName.getText().toString())) {
-                            Toast.makeText(getApplicationContext(),"Alarm name is in active", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(),"Alarm name is already taken", Toast.LENGTH_LONG).show();
                         }
                         if (alarmsNotActive.contains(alarmName.getText().toString())) {
-                            Toast.makeText(getApplicationContext(),"Alarm name is in not active", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(),"Alarm name is already taken", Toast.LENGTH_LONG).show();
                         }
                     }
 
                     else {
+                        //Insert the alarm into the active alarm DB, and go back to MainActivity
                         alarmDB.execSQL("INSERT INTO Alarm (name, days, sound, time) VALUES('" + alarmName.getText() + "', '" + days + "', '" + currentSong + "', '" + timeSetText.getText() + "');");
                         Toast.makeText(getApplicationContext(), "Alarm Added", Toast.LENGTH_LONG).show();
                         finish();
@@ -309,17 +317,30 @@ public class AddAlarmActivity extends AppCompatActivity {
 
     }
 
+    //Method to check if all the characters in a title are whitespaces
+    public boolean allWhitespaces(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) != ' ') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //Method to change all Strings in a list to lowercase
     public void changeArrayListToLowerCase(ArrayList<String> list) {
         for (String s : list) {
             s = s.toLowerCase();
         }
     }
+    //Add Customized Menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.add_alarm_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
+    //Action to close activity when 'X' is pressed
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         finish();
@@ -327,12 +348,14 @@ public class AddAlarmActivity extends AppCompatActivity {
         return true;
     }
 
+    //Finish if back button is pressed
     @Override
     public void onBackPressed() {
         finish();
         startActivity(new Intent(this, MainActivity.class));
     }
 
+    //Method for handling the settings of time, OnClick method for Time Textview
     public void setTime(View v) {
         DialogFragment fragment = new TimeClockFragment();
         fragment.show(getFragmentManager(),"showTimer");
