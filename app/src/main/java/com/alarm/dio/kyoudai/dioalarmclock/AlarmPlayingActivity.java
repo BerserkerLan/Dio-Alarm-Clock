@@ -32,24 +32,23 @@ public class AlarmPlayingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alarm_playing);
-
         alarmNameView = findViewById(R.id.playingTitle);
         alarmTimeView = findViewById(R.id.playingTime);
         showing = false;
         stopAlarmButton = findViewById(R.id.stopAlarmButton);
         MobileAds.initialize(getApplicationContext(), "ca-app-pub-5483591282248570~7107432706");
-        advert = new InterstitialAd(this);
-        advert.setAdUnitId("ca-app-pub-5483591282248570/7033789821");
-        advert.setAdListener(new AdListener() {
-            @Override
-            public void onAdClosed() {
-                finish();
-                startActivity(new Intent(getApplicationContext(),MainActivity.class));
-            }
-
-        });
-
-        advert.loadAd(new AdRequest.Builder().build());
+//        advert = new InterstitialAd(this);
+//        advert.setAdUnitId("ca-app-pub-5483591282248570/7033789821");
+//        advert.setAdListener(new AdListener() {
+//            @Override
+//            public void onAdClosed() {
+//                finish();
+//                startActivity(new Intent(getApplicationContext(),MainActivity.class));
+//            }
+//
+//        });
+//
+//        advert.loadAd(new AdRequest.Builder().build());
 
 
         PowerManager pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
@@ -107,11 +106,13 @@ public class AlarmPlayingActivity extends AppCompatActivity {
         stopAlarmButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (advert.isLoaded() && !showing) {
+//                if (advert.isLoaded() && !showing) {
+
                     soundPlayer.stop();
                     showing = true;
-                    advert.show();
-                }
+                    //advert.show();
+                finish();
+                //}
             }
         });
 

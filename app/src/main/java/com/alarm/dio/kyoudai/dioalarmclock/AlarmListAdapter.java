@@ -122,47 +122,24 @@ public class AlarmListAdapter extends BaseAdapter implements ListAdapter {
         alarmActive.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final SQLiteDatabase alarmDB = tempView.getContext().openOrCreateDatabase("Active Alarms",SQLiteDatabase.OPEN_READWRITE,null);
-                alarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
+                if (tempView != null) {
+                    final SQLiteDatabase alarmDB = tempView.getContext().openOrCreateDatabase("Active Alarms", SQLiteDatabase.OPEN_READWRITE, null);
+                    alarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
 
 
-                final SQLiteDatabase unActiveAlarmDB = tempView.getContext().openOrCreateDatabase("Unactive Alarms",SQLiteDatabase.OPEN_READWRITE,null);
-                unActiveAlarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
-                if (!alarmActive.isChecked()) {
-                    Cursor activeCursor = alarmDB.rawQuery("SELECT * FROM Alarm WHERE name=?",new String[]{alarms.get(position).getName()});
+                    final SQLiteDatabase unActiveAlarmDB = tempView.getContext().openOrCreateDatabase("Unactive Alarms", SQLiteDatabase.OPEN_READWRITE, null);
+                    unActiveAlarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
+                    if (!alarmActive.isChecked()) {
+                        Cursor activeCursor = alarmDB.rawQuery("SELECT * FROM Alarm WHERE name=?", new String[]{alarms.get(position).getName()});
                         activeCursor.moveToFirst();
                         String tempName = activeCursor.getString(activeCursor.getColumnIndex("name"));
                         String tempDays = activeCursor.getString(activeCursor.getColumnIndex("days"));
                         String tempSound = activeCursor.getString(activeCursor.getColumnIndex("sound"));
                         String tempTime = activeCursor.getString(activeCursor.getColumnIndex("time"));
-                    unActiveAlarmDB.execSQL("INSERT INTO Alarm (name, days, sound, time) VALUES('" + tempName + "', '" + tempDays + "', '" + tempSound + "', '" + tempTime + "');");
-                    alarmDB.delete("Alarm","name=?",new String[]{tempName});
-                    MainActivity.unActiveAlarms.add(alarms.get(position));
-                    MainActivity.activatedList.set(position, true);
-                    if (MainActivity.notificationManager != null) {
-                        MainActivity.notificationManager.cancelAll();
-                        ((MainActivity) tempView.getContext()).setUpNotifications();
-                    }
-
-                    activeCursor.close();
-
-                    //MainActivity.alarmListAdapter.notifyDataSetChanged();
-                    Toast.makeText(tempView.getContext(), "Made alarm inactive",Toast.LENGTH_SHORT).show();
-
-                }
-                else
-                {
-                    Cursor activeCursor = unActiveAlarmDB.rawQuery("SELECT * FROM Alarm WHERE name=?",new String[]{alarms.get(position).getName()});
-                    long count = DatabaseUtils.longForQuery(unActiveAlarmDB, "SELECT COUNT(*) FROM Alarm", null);
-                    if (count > 0 && activeCursor != null &&  activeCursor.moveToFirst() ) {
-                        String tempName = activeCursor.getString(activeCursor.getColumnIndex("name"));
-                        String tempDays = activeCursor.getString(activeCursor.getColumnIndex("days"));
-                        String tempSound = activeCursor.getString(activeCursor.getColumnIndex("sound"));
-                        String tempTime = activeCursor.getString(activeCursor.getColumnIndex("time"));
-                        alarmDB.execSQL("INSERT INTO Alarm (name, days, sound, time) VALUES('" + tempName + "', '" + tempDays + "', '" + tempSound + "', '" + tempTime + "');");
-                        unActiveAlarmDB.delete("Alarm", "name=?", new String[]{tempName});
-                        MainActivity.unActiveAlarms.remove(alarms.get(position));
-                        MainActivity.activatedList.set(position, false);
+                        unActiveAlarmDB.execSQL("INSERT INTO Alarm (name, days, sound, time) VALUES('" + tempName + "', '" + tempDays + "', '" + tempSound + "', '" + tempTime + "');");
+                        alarmDB.delete("Alarm", "name=?", new String[]{tempName});
+                        MainActivity.unActiveAlarms.add(alarms.get(position));
+                        MainActivity.activatedList.set(position, true);
                         if (MainActivity.notificationManager != null) {
                             MainActivity.notificationManager.cancelAll();
                             ((MainActivity) tempView.getContext()).setUpNotifications();
@@ -171,12 +148,36 @@ public class AlarmListAdapter extends BaseAdapter implements ListAdapter {
                         activeCursor.close();
 
                         //MainActivity.alarmListAdapter.notifyDataSetChanged();
-                        Toast.makeText(tempView.getContext(), "Made alarm Active", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(tempView.getContext(), "Made alarm inactive", Toast.LENGTH_SHORT).show();
 
+                    } else {
+                        Cursor activeCursor = unActiveAlarmDB.rawQuery("SELECT * FROM Alarm WHERE name=?", new String[]{alarms.get(position).getName()});
+                        long count = DatabaseUtils.longForQuery(unActiveAlarmDB, "SELECT COUNT(*) FROM Alarm", null);
+                        if (count > 0 && activeCursor != null && activeCursor.moveToFirst()) {
+                            String tempName = activeCursor.getString(activeCursor.getColumnIndex("name"));
+                            String tempDays = activeCursor.getString(activeCursor.getColumnIndex("days"));
+                            String tempSound = activeCursor.getString(activeCursor.getColumnIndex("sound"));
+                            String tempTime = activeCursor.getString(activeCursor.getColumnIndex("time"));
+                            alarmDB.execSQL("INSERT INTO Alarm (name, days, sound, time) VALUES('" + tempName + "', '" + tempDays + "', '" + tempSound + "', '" + tempTime + "');");
+                            unActiveAlarmDB.delete("Alarm", "name=?", new String[]{tempName});
+                            MainActivity.unActiveAlarms.remove(alarms.get(position));
+                            MainActivity.activatedList.set(position, false);
+                            if (MainActivity.notificationManager != null) {
+                                MainActivity.notificationManager.cancelAll();
+                                ((MainActivity) tempView.getContext()).setUpNotifications();
+                            }
+
+                            activeCursor.close();
+
+                            //MainActivity.alarmListAdapter.notifyDataSetChanged();
+                            Toast.makeText(tempView.getContext(), "Made alarm Active", Toast.LENGTH_SHORT).show();
+
+                        }
                     }
                 }
             }
         });
+
 
 
         return view;

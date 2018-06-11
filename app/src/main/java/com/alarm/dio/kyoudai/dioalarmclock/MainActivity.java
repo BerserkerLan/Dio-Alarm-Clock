@@ -1,6 +1,7 @@
 package com.alarm.dio.kyoudai.dioalarmclock;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -29,6 +30,7 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -44,8 +46,8 @@ public class MainActivity extends AppCompatActivity {
     Switch activateSwitch;
     public static ActivateAlarmThread alarmThread;
     public static ArrayList<Boolean> activatedList;
-    final int TIME_START_INDEX = 11;
-    final int TIME_END_INDEX = 16;
+    static final int TIME_START_INDEX = 11;
+    static final int TIME_END_INDEX = 16;
     static Alarm CLOSEST_ALARM_HOPEFULLY;
     public static NotificationManager notificationManager;
     int closestDayIndex;
@@ -270,8 +272,9 @@ public class MainActivity extends AppCompatActivity {
 
                     }
 
+                    WeakReference<Activity> activity = new WeakReference<Activity>(this);
 
-                    alarmThread = new ActivateAlarmThread();
+                    alarmThread = new ActivateAlarmThread(activity);
                     alarmThread.execute();
                 }
             }
@@ -333,7 +336,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public String[] getDaysInArray(String d) {
+    public static String[] getDaysInArray(String d) {
         String[] days = d.split("\\|");
         String[] daysMinusOne = new String[days.length - 1];
         System.arraycopy(days, 1, daysMinusOne, 0, days.length - 1);
@@ -393,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    public String transformTime(String time) {
+    public static String transformTime(String time) {
         String[] timeArray = time.split("\\:");
 
         int hour = Integer.parseInt(timeArray[0]);
@@ -467,18 +470,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    class ActivateAlarmThread extends AsyncTask<Alarm,Alarm,Alarm> {
+    static class ActivateAlarmThread extends AsyncTask<Alarm,Alarm,Alarm> {
 
         boolean itsTime;
+         WeakReference<Activity> activity;
+
+        ActivateAlarmThread(WeakReference<Activity> activity) {
+            this.activity =  activity;
+        }
 
         @Override
         protected Alarm doInBackground(Alarm... alarms) {
             itsTime = false;
             if (CLOSEST_ALARM_HOPEFULLY != null && !activatedList.isEmpty()) {
-                int index = alarmsArrayList.indexOf(CLOSEST_ALARM_HOPEFULLY);
-                boolean dayIsToday = false;
 
                 while (!itsTime) {
+                    int index = alarmsArrayList.indexOf(CLOSEST_ALARM_HOPEFULLY);
                     boolean sameSize = activatedList.size() == alarmsArrayList.size();
                     if (sameSize) {
                         Log.d("Size", "Same Size");
@@ -500,11 +507,8 @@ public class MainActivity extends AppCompatActivity {
                     String currentDay = currentDate.substring(0, 3).toLowerCase();
                     if (CLOSEST_ALARM_HOPEFULLY != null) {
                         String[] days = getDaysInArray(CLOSEST_ALARM_HOPEFULLY.getDays());
-
-                        if (!dayIsToday) {
                             for (String day : days) {
                                 if (day.toLowerCase().equals(currentDay)) {
-                                    dayIsToday = true;
                                     Log.d("day", "Day is today!");
                                     break;
                                 }
@@ -516,7 +520,7 @@ public class MainActivity extends AppCompatActivity {
                         //Log.d("time", currentTime);
 
 
-                        if (transformTime(CLOSEST_ALARM_HOPEFULLY.getTime()).equals(transformTime(currentTime)) && dayIsToday && activatedList.get(index)) {
+                        if (transformTime(CLOSEST_ALARM_HOPEFULLY.getTime()).equals(transformTime(currentTime))  && activatedList.get(index)) {
                             itsTime = true;
                             break;
                         }
@@ -527,7 +531,7 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
-            }
+
             return null;
         }
 
@@ -536,7 +540,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Alarm alarm) {
             if (CLOSEST_ALARM_HOPEFULLY != null && itsTime) {
                 Log.d("tried", "Tried to run alarm");
-                Intent playAlarmIntent = new Intent(getApplicationContext(), AlarmPlayingActivity.class);
+                Intent playAlarmIntent = new Intent(activity.get().getApplicationContext(), AlarmPlayingActivity.class);
                 playAlarmIntent.putExtra("alarmName", CLOSEST_ALARM_HOPEFULLY.getName());
                 playAlarmIntent.putExtra("alarmTime", CLOSEST_ALARM_HOPEFULLY.getTime());
                 playAlarmIntent.putExtra("alarmSound", CLOSEST_ALARM_HOPEFULLY.getSound());
@@ -544,9 +548,9 @@ public class MainActivity extends AppCompatActivity {
                 if (notificationManager != null) {
                     notificationManager.cancelAll();
                 }
-                finish();
+                activity.get().finish();
 
-                startActivity(playAlarmIntent);
+               activity.get().startActivity(playAlarmIntent);
             }
         }
     }
