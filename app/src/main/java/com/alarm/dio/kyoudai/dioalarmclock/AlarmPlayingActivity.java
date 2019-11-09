@@ -17,6 +17,8 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
 import com.google.android.gms.ads.MobileAds;
+import com.startapp.android.publish.adsCommon.StartAppAd;
+import com.startapp.android.publish.adsCommon.StartAppSDK;
 
 @SuppressWarnings("ALL")
 public class AlarmPlayingActivity extends AppCompatActivity {
@@ -31,11 +33,16 @@ public class AlarmPlayingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        StartAppSDK.init(this, "210746585", true);
         setContentView(R.layout.activity_alarm_playing);
         alarmNameView = findViewById(R.id.playingTitle);
         alarmTimeView = findViewById(R.id.playingTime);
         stopAlarmButton = findViewById(R.id.stopAlarmButton);
 
+        StartAppSDK.setUserConsent (this,
+                "pas",
+                System.currentTimeMillis(),
+                false);
         //Variable used for if advertistment is showing
         showing = false;
 
@@ -45,7 +52,7 @@ public class AlarmPlayingActivity extends AppCompatActivity {
         sound = getIntent().getStringExtra("alarmSound");
 
         //Adverts temporarily not showing as account disabled
-        MobileAds.initialize(getApplicationContext(), "ca-app-pub-5483591282248570~7107432706");
+      //  MobileAds.initialize(getApplicationContext(), "ca-app-pub-5483591282248570~7107432706");
 //        advert = new InterstitialAd(this);
 //        advert.setAdUnitId("ca-app-pub-5483591282248570/7033789821");
 //        advert.setAdListener(new AdListener() {
@@ -129,6 +136,7 @@ public class AlarmPlayingActivity extends AppCompatActivity {
                     soundPlayer.stop();
                     showing = true;
                     //advert.show();
+                StartAppAd.showAd(getApplicationContext());
                 //End Activity
                 finish();
                 //}

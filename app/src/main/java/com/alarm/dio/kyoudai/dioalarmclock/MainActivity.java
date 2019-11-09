@@ -26,9 +26,8 @@ import android.widget.Switch;
 
 import android.widget.Toast;
 
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.MobileAds;
+import com.startapp.android.publish.adsCommon.StartAppAd;
+import com.startapp.android.publish.adsCommon.StartAppSDK;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -61,11 +60,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(null);
+        StartAppSDK.init(this, "210746585", true);
+        StartAppAd.disableSplash();
         setContentView(R.layout.activity_main);
         //Initialize and load advertisements
-        MobileAds.initialize(this, "ca-app-pub-5483591282248570~7107432706");
-        AdView adView = findViewById(R.id.adView);
-        adView.loadAd(new AdRequest.Builder().build());
+//        MobileAds.initialize(this, "ca-app-pub-5483591282248570~7107432706");
+//        AdView adView = findViewById(R.id.adView);
+//        adView.loadAd(new AdRequest.Builder().build());
+
+
+        StartAppSDK.setUserConsent (this,
+                "pas",
+                System.currentTimeMillis(),
+                false);
 
 
         //Initialize UI elements
@@ -131,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
     public void loadAlarmList() {
         activatedList = new ArrayList<>();
         //Loads from the database of active alarms
-        alarmDB = openOrCreateDatabase("Active Alarms", SQLiteDatabase.OPEN_READWRITE, null);
+        alarmDB = openOrCreateDatabase("Active Alarms", MODE_PRIVATE, null);
         alarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
 
         Cursor resultAlarm = alarmDB.rawQuery("SELECT * FROM Alarm", null);
@@ -159,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //Load from the database of inactive alarms
-        inactiveAlarmDB = openOrCreateDatabase("Unactive Alarms",SQLiteDatabase.OPEN_READWRITE,null);
+        inactiveAlarmDB = openOrCreateDatabase("Unactive Alarms",MODE_PRIVATE,null);
         inactiveAlarmDB.execSQL("CREATE TABLE IF NOT EXISTS Alarm(name VARCHAR, days VARCHAR, sound VARCHAR, time VARCHAR);");
 
         resultAlarm = inactiveAlarmDB.rawQuery("SELECT * FROM Alarm", null);
@@ -331,6 +338,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             //Keeps task running in Background
             this.moveTaskToBack(true);
+            StartAppAd.onBackPressed(this);
         }
 
     }
